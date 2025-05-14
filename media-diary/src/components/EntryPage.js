@@ -21,9 +21,13 @@ function EntryPage() {
     category: "",
     content: "",
     imageUrl: "",
-    rating: 0
+    rating: 0,
   });
-  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+  const [notification, setNotification] = useState({
+    show: false,
+    message: "",
+    type: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState({ type: "all", sortBy: "date" });
   const [theme, setTheme] = useState("light");
@@ -58,7 +62,7 @@ function EntryPage() {
       category: "Category",
       rating: "Rating",
       content: "Content/Overview",
-      submit: "Submit"
+      submit: "Submit",
     },
     hi: {
       mediaDiary: "मीडिया डायरी",
@@ -78,7 +82,7 @@ function EntryPage() {
       category: "श्रेणी",
       rating: "रेटिंग",
       content: "सामग्री/सारांश",
-      submit: "जमा करें"
+      submit: "जमा करें",
     },
     hinglish: {
       mediaDiary: "Media Diary",
@@ -98,35 +102,37 @@ function EntryPage() {
       category: "Category",
       rating: "Rating",
       content: "Content/Overview",
-      submit: "Submit karo"
-    }
+      submit: "Submit karo",
+    },
   };
 
   const fetchEntries = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/entries');
+      const response = await axios.get("http://localhost:5000/api/entries");
       let filteredEntries = response.data;
-      
+
       // Apply type filter
-      if (filter.type !== 'all') {
-        filteredEntries = filteredEntries.filter(entry => entry.type === filter.type);
+      if (filter.type !== "all") {
+        filteredEntries = filteredEntries.filter(
+          (entry) => entry.type === filter.type
+        );
       }
-      
+
       // Apply sorting
       filteredEntries.sort((a, b) => {
-        if (filter.sortBy === 'date') {
+        if (filter.sortBy === "date") {
           return new Date(b.date) - new Date(a.date);
-        } else if (filter.sortBy === 'rating') {
+        } else if (filter.sortBy === "rating") {
           return b.rating - a.rating;
-        } else if (filter.sortBy === 'title') {
+        } else if (filter.sortBy === "title") {
           return a.title.localeCompare(b.title);
         }
         return 0;
       });
-      
+
       setEntries(filteredEntries);
     } catch (error) {
-      showNotification('Error fetching entries', 'error');
+      showNotification("Error fetching entries", "error");
     }
   }, [filter]);
 
@@ -137,60 +143,79 @@ function EntryPage() {
   const fetchMediaInfo = async (title, type) => {
     setIsLoading(true);
     try {
-      if (type === 'movie' || type === 'tv') {
+      if (type === "movie" || type === "tv") {
         const response = await axios.get(`${TMDB_BASE_URL}/search/${type}`, {
           params: {
             api_key: TMDB_API_KEY,
             query: title,
-            language: 'en-US',
+            language: "en-US",
             page: 1,
-            include_adult: false
-          }
+            include_adult: false,
+          },
         });
 
         if (response.data.results.length > 0) {
           const media = response.data.results[0];
-          
+
           // Fetch additional details
-          const detailsResponse = await axios.get(`${TMDB_BASE_URL}/${type}/${media.id}`, {
-            params: {
-              api_key: TMDB_API_KEY,
-              language: 'en-US'
+          const detailsResponse = await axios.get(
+            `${TMDB_BASE_URL}/${type}/${media.id}`,
+            {
+              params: {
+                api_key: TMDB_API_KEY,
+                language: "en-US",
+              },
             }
-          });
+          );
 
           const details = detailsResponse.data;
-          
-          setNewEntry(prev => ({
+
+          setNewEntry((prev) => ({
             ...prev,
-            title: type === 'movie' ? details.title : details.name,
-            releaseYear: details.release_date?.split('-')[0] || details.first_air_date?.split('-')[0] || '',
-            imageUrl: media.poster_path ? `${TMDB_IMAGE_BASE_URL}${media.poster_path}` : '',
-            creator: type === 'movie' ? details.director : details.created_by?.[0]?.name || '',
-            category: details.genres?.map(genre => genre.name).join(', ') || '',
-            content: details.overview || ''
+            title: type === "movie" ? details.title : details.name,
+            releaseYear:
+              details.release_date?.split("-")[0] ||
+              details.first_air_date?.split("-")[0] ||
+              "",
+            imageUrl: media.poster_path
+              ? `${TMDB_IMAGE_BASE_URL}${media.poster_path}`
+              : "",
+            creator:
+              type === "movie"
+                ? details.director
+                : details.created_by?.[0]?.name || "",
+            category:
+              details.genres?.map((genre) => genre.name).join(", ") || "",
+            content: details.overview || "",
           }));
 
-          showNotification('Media information fetched successfully!', 'success');
+          showNotification(
+            "Media information fetched successfully!",
+            "success"
+          );
         } else {
-          showNotification('No media found with that title', 'error');
+          showNotification("No media found with that title", "error");
         }
-      } else if (type === 'book') {
-        const response = await axios.get(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(title)}`);
+      } else if (type === "book") {
+        const response = await axios.get(
+          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+            title
+          )}`
+        );
         if (response.data.items?.length > 0) {
           const book = response.data.items[0].volumeInfo;
-          setNewEntry(prev => ({
+          setNewEntry((prev) => ({
             ...prev,
-            releaseYear: book.publishedDate?.split('-')[0] || '',
-            imageUrl: book.imageLinks?.thumbnail || '',
-            creator: book.authors?.[0] || '',
-            category: book.categories?.[0] || ''
+            releaseYear: book.publishedDate?.split("-")[0] || "",
+            imageUrl: book.imageLinks?.thumbnail || "",
+            creator: book.authors?.[0] || "",
+            category: book.categories?.[0] || "",
           }));
         }
       }
     } catch (error) {
-      console.error('Error fetching media info:', error);
-      showNotification('Error fetching media info. Please try again.', 'error');
+      console.error("Error fetching media info:", error);
+      showNotification("Error fetching media info. Please try again.", "error");
     }
     setIsLoading(false);
   };
@@ -198,7 +223,7 @@ function EntryPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/entries', newEntry);
+      await axios.post("http://localhost:5000/api/entries", newEntry);
       setNewEntry({
         title: "",
         type: "movie",
@@ -207,12 +232,12 @@ function EntryPage() {
         category: "",
         content: "",
         imageUrl: "",
-        rating: 0
+        rating: 0,
       });
       fetchEntries();
-      showNotification('Entry added successfully!', 'success');
+      showNotification("Entry added successfully!", "success");
     } catch (error) {
-      showNotification('Error adding entry', 'error');
+      showNotification("Error adding entry", "error");
     }
   };
 
@@ -220,22 +245,38 @@ function EntryPage() {
     try {
       await axios.delete(`http://localhost:5000/api/entries/${id}`);
       fetchEntries();
-      showNotification('Entry deleted successfully!', 'success');
+      showNotification("Entry deleted successfully!", "success");
     } catch (error) {
-      showNotification('Error deleting entry', 'error');
+      showNotification("Error deleting entry", "error");
     }
   };
 
   const showNotification = (message, type) => {
     setNotification({ show: true, message, type });
-    setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
+    setTimeout(
+      () => setNotification({ show: false, message: "", type: "" }),
+      3000
+    );
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-gray-900 text-gray-100" : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 text-gray-900"}`}>
+    <div
+      className={`min-h-screen transition-colors duration-300 ${
+        theme === "dark"
+          ? "bg-gray-900 text-gray-100"
+          : "bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 text-gray-900"
+      }`}
+    >
       {/* Header */}
-      <header className={`w-full shadow-md py-6 px-4 flex flex-col md:flex-row md:items-center md:justify-between mb-8 ${theme === "dark" ? "bg-gray-800" : "bg-white/80"}`}>
-        <h1 className="text-4xl font-extrabold tracking-tight text-center md:text-left" style={{letterSpacing: '2px'}}>
+      <header
+        className={`w-full shadow-md py-6 px-4 flex flex-col md:flex-row md:items-center md:justify-between mb-8 ${
+          theme === "dark" ? "bg-gray-800" : "bg-white/80"
+        }`}
+      >
+        <h1
+          className="text-4xl font-extrabold tracking-tight text-center md:text-left"
+          style={{ letterSpacing: "2px" }}
+        >
           {TEXT[language].mediaDiary}
         </h1>
         <div className="flex gap-4 mt-4 md:mt-0 justify-center md:justify-end items-center">
@@ -250,11 +291,13 @@ function EntryPage() {
           {/* Language selector */}
           <select
             value={language}
-            onChange={e => setLanguage(e.target.value)}
+            onChange={(e) => setLanguage(e.target.value)}
             className="p-2 rounded border border-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-100"
           >
-            {LANGUAGES.map(lang => (
-              <option key={lang.code} value={lang.code}>{lang.label}</option>
+            {LANGUAGES.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.label}
+              </option>
             ))}
           </select>
         </div>
@@ -265,7 +308,9 @@ function EntryPage() {
         <div className="mb-6 flex gap-4 flex-wrap">
           <select
             value={filter.type}
-            onChange={(e) => setFilter(prev => ({ ...prev, type: e.target.value }))}
+            onChange={(e) =>
+              setFilter((prev) => ({ ...prev, type: e.target.value }))
+            }
             className="p-2 border rounded"
           >
             <option value="all">{TEXT[language].allTypes}</option>
@@ -277,7 +322,9 @@ function EntryPage() {
 
           <select
             value={filter.sortBy}
-            onChange={(e) => setFilter(prev => ({ ...prev, sortBy: e.target.value }))}
+            onChange={(e) =>
+              setFilter((prev) => ({ ...prev, sortBy: e.target.value }))
+            }
             className="p-2 border rounded"
           >
             <option value="date">{TEXT[language].sortByDate}</option>
@@ -287,15 +334,24 @@ function EntryPage() {
         </div>
 
         {/* Add Entry Form */}
-        <form onSubmit={handleSubmit} className={`mb-8 p-6 rounded-lg shadow-md ${theme === "dark" ? "bg-gray-800" : "bg-white/80"}`}>
+        <form
+          onSubmit={handleSubmit}
+          className={`mb-8 p-6 rounded-lg shadow-md ${
+            theme === "dark" ? "bg-gray-800" : "bg-white/80"
+          }`}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">{TEXT[language].title}</label>
+              <label className="block text-sm font-medium mb-1">
+                {TEXT[language].title}
+              </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={newEntry.title}
-                  onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewEntry({ ...newEntry, title: e.target.value })
+                  }
                   className="w-full p-2 border rounded"
                   required
                 />
@@ -305,20 +361,24 @@ function EntryPage() {
                   disabled={isLoading || !newEntry.title}
                   className={`px-4 py-2 rounded font-medium ${
                     isLoading || !newEntry.title
-                      ? 'bg-gray-300 cursor-not-allowed'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-blue-500 hover:bg-blue-600 text-white"
                   }`}
                 >
-                  {isLoading ? 'Fetching...' : 'Fetch'}
+                  {isLoading ? "Fetching..." : "Fetch"}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">{TEXT[language].type}</label>
+              <label className="block text-sm font-medium mb-1">
+                {TEXT[language].type}
+              </label>
               <select
                 value={newEntry.type}
-                onChange={(e) => setNewEntry({ ...newEntry, type: e.target.value })}
+                onChange={(e) =>
+                  setNewEntry({ ...newEntry, type: e.target.value })
+                }
                 className="w-full p-2 border rounded"
               >
                 <option value="movie">{TEXT[language].movies}</option>
@@ -329,54 +389,74 @@ function EntryPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">{TEXT[language].releaseYear}</label>
+              <label className="block text-sm font-medium mb-1">
+                {TEXT[language].releaseYear}
+              </label>
               <input
                 type="number"
                 value={newEntry.releaseYear}
-                onChange={(e) => setNewEntry({ ...newEntry, releaseYear: e.target.value })}
+                onChange={(e) =>
+                  setNewEntry({ ...newEntry, releaseYear: e.target.value })
+                }
                 className="w-full p-2 border rounded"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">{TEXT[language].creator}</label>
+              <label className="block text-sm font-medium mb-1">
+                {TEXT[language].creator}
+              </label>
               <input
                 type="text"
                 placeholder={TEXT[language].creator}
                 value={newEntry.creator}
-                onChange={(e) => setNewEntry({ ...newEntry, creator: e.target.value })}
+                onChange={(e) =>
+                  setNewEntry({ ...newEntry, creator: e.target.value })
+                }
                 className="w-full p-2 border rounded"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">{TEXT[language].category}</label>
+              <label className="block text-sm font-medium mb-1">
+                {TEXT[language].category}
+              </label>
               <input
                 type="text"
                 value={newEntry.category}
-                onChange={(e) => setNewEntry({ ...newEntry, category: e.target.value })}
+                onChange={(e) =>
+                  setNewEntry({ ...newEntry, category: e.target.value })
+                }
                 className="w-full p-2 border rounded"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">{TEXT[language].rating}</label>
+              <label className="block text-sm font-medium mb-1">
+                {TEXT[language].rating}
+              </label>
               <input
                 type="number"
                 min="0"
                 max="10"
                 step="0.1"
                 value={newEntry.rating}
-                onChange={(e) => setNewEntry({ ...newEntry, rating: e.target.value })}
+                onChange={(e) =>
+                  setNewEntry({ ...newEntry, rating: e.target.value })
+                }
                 className="w-full p-2 border rounded"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">{TEXT[language].content}</label>
+              <label className="block text-sm font-medium mb-1">
+                {TEXT[language].content}
+              </label>
               <textarea
                 value={newEntry.content}
-                onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
+                onChange={(e) =>
+                  setNewEntry({ ...newEntry, content: e.target.value })
+                }
                 className="w-full p-2 border rounded"
                 rows={3}
               />
@@ -384,7 +464,11 @@ function EntryPage() {
           </div>
           <button
             type="submit"
-            className={`mt-4 px-6 py-2 rounded font-bold shadow ${theme === "dark" ? "bg-blue-600 text-white" : "bg-gradient-to-r from-blue-500 to-pink-500 text-white"}`}
+            className={`mt-4 px-6 py-2 rounded font-bold shadow ${
+              theme === "dark"
+                ? "bg-blue-600 text-white"
+                : "bg-gradient-to-r from-blue-500 to-pink-500 text-white"
+            }`}
           >
             {TEXT[language].submit}
           </button>
@@ -393,7 +477,10 @@ function EntryPage() {
         {/* Entries List */}
         <div className="space-y-4">
           {entries.map((entry) => (
-            <div key={entry._id} className="border p-4 rounded bg-white shadow-sm">
+            <div
+              key={entry._id}
+              className="border p-4 rounded bg-white shadow-sm"
+            >
               <div className="flex gap-4">
                 {entry.imageUrl && (
                   <img
