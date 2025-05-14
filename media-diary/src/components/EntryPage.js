@@ -291,13 +291,27 @@ function EntryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">{TEXT[language].title}</label>
-              <input
-                type="text"
-                value={newEntry.title}
-                onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                className="w-full p-2 border rounded"
-                required
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newEntry.title}
+                  onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                  className="w-full p-2 border rounded"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => fetchMediaInfo(newEntry.title, newEntry.type)}
+                  disabled={isLoading || !newEntry.title}
+                  className={`px-4 py-2 rounded font-medium ${
+                    isLoading || !newEntry.title
+                      ? 'bg-gray-300 cursor-not-allowed'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {isLoading ? 'Fetching...' : 'Fetch'}
+                </button>
+              </div>
             </div>
 
             <div>
